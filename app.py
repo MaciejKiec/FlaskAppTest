@@ -140,3 +140,7 @@ def process():
         os.remove(file_path)
     os.rmdir(folder_name)
     return jsonify(response_list)
+
+
+if __name__ == '__main__':
+    app.run()
