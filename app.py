@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+import requests
 import base64
 import os
 import torch
@@ -106,11 +107,9 @@ def cardRecognitionAlgorithm(folder_name, i):
     model.eval()
     return makePrediction(device, model, folder_name, model_state_dict, custom_image_tr)
 
-
 @app.route("/")
 def hello():
-    return "Hello World!"
-
+    return "Flask microservice works properly!"
 
 @app.route('/process', methods=['POST'])
 def process():
@@ -129,18 +128,32 @@ def process():
             f.write(image)
 
     response_list = {}
+    dataToSend = []
 
     for i in range(1, number_of_photos + 1):
         file_path = folder_name + '/image_' + str(i) + '.jpg'
         card_name = cardRecognitionAlgorithm(file_path, i)
         response_list[i-1] = card_name
+        dataToSend.append({
+            "nameOfCard": card_name,
+            "isReversed": "false"
+        })
 
     for file_name in os.listdir(folder_name):
         file_path = os.path.join(folder_name, file_name)
         os.remove(file_path)
     os.rmdir(folder_name)
+
+    response = requests.post('https://witchblog.azurewebsites.net/api/v1/divination/anonymous', json=dataToSend)
+    response_value = response.json()
+
+    response_list[3] = response_value['prediction']
+
+
     return jsonify(response_list)
 
 
 if __name__ == '__main__':
     app.run(port = 8000)
+
+
